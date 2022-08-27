@@ -10,7 +10,6 @@ import com.google.api.services.youtube.model.VideoListResponse;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class RetrieveVideo {
@@ -39,7 +38,7 @@ public class RetrieveVideo {
                 .list(Collections.singletonList("id"));
 
         SearchListResponse response = null;
-        response = requestForId.setKey("AIzaSyBouW-UY0Y5EdHqvaltpp4S3nZ1PI52UXY")
+        response = requestForId.setKey("add your key")
                 .setMaxResults(1L)
                 .setQ(query)
                 .execute();
@@ -50,7 +49,7 @@ public class RetrieveVideo {
                 .list(Collections.singletonList("snippet,contentDetails"));
 
         VideoListResponse videoResponse = request.setKey("AIzaSyBouW-UY0Y5EdHqvaltpp4S3nZ1PI52UXY")
-                .setId(Arrays.asList(id))
+                .setId(Collections.singletonList(id))
                 .execute();
 
         return videoResponse;
