@@ -5,6 +5,9 @@ import tech.seife.emily.commands.Details;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This class is meant to hold all the commands of the bot along side their description
+ */
 public class Commands {
 
     private final Set<Details> commands;

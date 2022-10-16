@@ -1,4 +1,4 @@
-package tech.seife.emily.audio;
+package tech.seife.emily.audiologic;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -7,12 +7,12 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-public class AudioResult implements AudioLoadResultHandler {
+public class AudioResults implements AudioLoadResultHandler {
 
     private final AudioPlayerManager audioPlayerManager;
     private final AudioPlayer audioPlayer;
 
-    public AudioResult(AudioPlayerManager audioPlayerManager, AudioPlayer audioPlayer) {
+    public AudioResults(AudioPlayerManager audioPlayerManager, AudioPlayer audioPlayer) {
         this.audioPlayerManager = audioPlayerManager;
         this.audioPlayer = audioPlayer;
     }

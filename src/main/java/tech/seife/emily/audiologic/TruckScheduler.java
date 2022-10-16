@@ -1,4 +1,4 @@
-package tech.seife.emily.audio;
+package tech.seife.emily.audiologic;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -6,18 +6,21 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import tech.seife.emily.datamanager.data.audio.QueueManager;
+import tech.seife.emily.datamanager.data.audio.AudioData;
 
-public class AudioEvent extends AudioEventAdapter {
+public class TruckScheduler extends AudioEventAdapter {
 
     private final AudioPlayerManager audioPlayerManager;
-    private final QueueManager queueManager;
+    private final AudioData audioData;
+    private final GuildAudioPlayer guildAudioPlayer;
 
 
-    public AudioEvent(AudioPlayerManager audioPlayerManager, QueueManager queueManager) {
+    public TruckScheduler(AudioPlayerManager audioPlayerManager, AudioData audioData, GuildAudioPlayer guildAudioPlayer) {
         this.audioPlayerManager = audioPlayerManager;
-        this.queueManager = queueManager;
+        this.audioData = audioData;
+        this.guildAudioPlayer = guildAudioPlayer;
     }
+
 
     @Override
     public void onPlayerPause(AudioPlayer player) {
@@ -34,18 +37,20 @@ public class AudioEvent extends AudioEventAdapter {
         super.onTrackStart(player, track);
     }
 
+
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        if (endReason.mayStartNext) {
-            queueManager.removeCurrentSong();
-            if (queueManager.hasNext()) {
-                queueManager.pushNextSong();
-                queueManager.deleteQueueSong(0);
-                queueManager.rePosition();
-                audioPlayerManager.loadItem(queueManager.getCurrentSongUrl(), new AudioResult(audioPlayerManager, player));
+        super.onTrackEnd(player, track, endReason);
+        if (endReason.mayStartNext && guildAudioPlayer.getAudioData(player) != null) {
+            String serverId = guildAudioPlayer.getAudioData(player).serverId();
+            audioData.removeCurrentSong(serverId);
+            if (audioData.hasNext(serverId)) {
+                audioData.pushNextSong(serverId);
+                audioData.deleteSongFromQueue(serverId, 0);
+                audioData.fixQueue(serverId);
+                audioPlayerManager.loadItem(audioData.getCurrentPlayingSong(serverId).url(), new AudioResults(audioPlayerManager, player));
 
             }
-
         }
     }
 

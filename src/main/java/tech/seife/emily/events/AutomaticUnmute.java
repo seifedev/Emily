@@ -3,7 +3,7 @@ package tech.seife.emily.events;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import tech.seife.emily.datamanager.data.mute.MutedUserManager;
+import tech.seife.emily.datamanager.data.moderate.MutedUserManager;
 
 public class AutomaticUnmute extends ListenerAdapter {
 
@@ -13,13 +13,18 @@ public class AutomaticUnmute extends ListenerAdapter {
         this.mutedUserManager = mutedUserManager;
     }
 
+    /**
+     * Removes the mute of the user if it's paste the "punishment" date.
+     */
     @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-        if (mutedUserManager.getMutedUsersDataSet(event.getAuthor().getId()) != null) {
-            if (mutedUserManager.canUnmuteUser(event.getAuthor().getId())) {
-                mutedUserManager.unMute(event.getAuthor().getId(), "Enough time passed. The mute has been removed by the system.");
+    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
+        if (!e.isFromGuild()) return;
+
+        if (mutedUserManager.getMutedUsersDataSetForServer(e.getGuild().getId()) != null) {
+            if (mutedUserManager.canUnmuteUser(e.getGuild().getId(), e.getAuthor().getId())) {
+                mutedUserManager.unMute(e.getAuthor().getId(), e.getGuild().getId(), "Enough time passed. The mute has been removed by the system.");
             } else {
-                event.getMessage().delete().queue();
+                e.getMessage().delete().queue();
             }
         }
     }

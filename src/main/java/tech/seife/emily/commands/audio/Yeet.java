@@ -6,20 +6,28 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import tech.seife.emily.commands.Details;
-import tech.seife.emily.datamanager.data.system.SystemManager;
+import tech.seife.emily.datamanager.data.system.SystemData;
 
 public class Yeet extends ListenerAdapter implements Details {
 
-    private final SystemManager systemData;
+    private final SystemData systemData;
 
-    public Yeet(SystemManager systemData) {
+    public Yeet(SystemData systemData) {
         this.systemData = systemData;
     }
 
+
+    /**
+     * it kicks every members outside of the voice chat channel.
+     */
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!systemData.getMusicChannel().equals(systemData.getMusicChannel())) return;
-        if (e.getMessage().getContentRaw().equalsIgnoreCase(systemData.getCommandPrefix() + "yeet")) {
+        if (!e.isFromGuild()) return;
+
+        if (!systemData.hasMusicChannel(e.getGuild().getId()) || !systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId()))
+            return;
+
+        if (e.getMessage().getContentRaw().equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "yeet")) {
             if (e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) {
                 e.getChannel().sendMessage("You must be in a voice channel to use this command").queue();
             } else {
@@ -29,12 +37,13 @@ public class Yeet extends ListenerAdapter implements Details {
                     channel.getGuild().moveVoiceMember(member, null).queue();
                 }
             }
-            eraseCommand(systemData, e.getMessage());
+            eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
+
         }
     }
 
     @Override
-    public String getExplanation() {
-        return systemData.getCommandPrefix() + "yeet to kick all the members and the bot out of the current voice channel.";
+    public String getExplanation(String serverId) {
+        return systemData.getCommandPrefix(serverId) + "yeet to kick all the members and the bot out of the current voice channel.";
     }
 }

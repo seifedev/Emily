@@ -1,4 +1,4 @@
-package tech.seife.emily.audio;
+package tech.seife.emily.audiologic;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
@@ -13,6 +13,7 @@ public class AudioPlayerSendHandler implements AudioSendHandler {
     public AudioPlayerSendHandler(AudioPlayer audioPlayer) {
         this.audioPlayer = audioPlayer;
     }
+
 
     @Override
     public boolean canProvide() {

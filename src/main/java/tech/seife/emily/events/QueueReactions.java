@@ -19,6 +19,9 @@ public class QueueReactions extends ListenerAdapter {
     }
 
 
+    /**
+     * Based on which emoji was clicked they will be executing certain.
+     */
     @Override
     public void onMessageReactionAdd(@NotNull MessageReactionAddEvent e) {
         if (queueManager.getEmbed(e.getUserId(), e.getMessageId()) != null) {
@@ -28,28 +31,35 @@ public class QueueReactions extends ListenerAdapter {
                     queueManager.clearUserPage(e.getUserId());
                 }
                 case "U+23ed" -> {
-                    if ((queueManager.getAmountOfSongs() / 10) > queueManager.getPage(e.getUserId())) {
+                    if ((queueManager.getAmountOfRemainingSongs(e.getGuild().getId()) / 10) > queueManager.getPage(e.getUserId())) {
                         queueManager.setUserPage(e.getUserId(), queueManager.getPage(e.getUserId()) + 1);
-                        editEmbed(e.getTextChannel(), e.getUserId(), e.getMessageId());
+                        editEmbed(e.getTextChannel(), e.getUserId(), e.getMessageId(), e.getGuild().getId());
                     }
                 }
                 case "U+23ee" -> {
                     if (queueManager.getPage(e.getUserId()) > 0) {
                         queueManager.setUserPage(e.getUserId(), queueManager.getPage(e.getUserId()) - 1);
-                        editEmbed(e.getTextChannel(), e.getUserId(), e.getMessageId());
+                        editEmbed(e.getTextChannel(), e.getUserId(), e.getMessageId(), e.getGuild().getId());
                     }
                 }
             }
         }
     }
 
-    private void editEmbed(TextChannel channel, String userId, String messageId) {
+    /**
+     * Adds the appropriate emojis to the queue embed message.
+     * @param channel The channel to edit the embed message, usually in the voice chat channel.
+     * @param userId Who sent the request to view the queue and who can react on the embed.
+     * @param messageId The ID of the embed message to add the reactions.
+     * @param serverId The id of the server
+     */
+    private void editEmbed(TextChannel channel, String userId, String messageId, String serverId) {
 
         EmbedBuilder embedBuilder = queueManager.getEmbed(userId, messageId);
 
         channel.retrieveMessageById(messageId)
                 .queue(message -> {
-                    message.editMessageEmbeds(queueManager.getEmbedQueue((queueManager.getPage(userId)) * 10L, queueManager.getPage(userId), jda, embedBuilder).build())
+                    message.editMessageEmbeds(queueManager.getEmbedQueue((queueManager.getPage(userId)) * 10L, queueManager.getPage(userId), jda, embedBuilder, serverId).build())
                             .queue(message1 -> {
                                 queueManager.addQueueManager(userId, messageId, embedBuilder);
                                 message.clearReactions().queue();

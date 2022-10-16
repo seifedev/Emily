@@ -4,27 +4,35 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import tech.seife.emily.commands.Details;
-import tech.seife.emily.datamanager.data.system.SystemManager;
+import tech.seife.emily.datamanager.data.system.SystemData;
+import tech.seife.emily.datamanager.data.system.SystemFileHandler;
 import tech.seife.emily.utils.Utils;
 
 public class SelfDestructDelay extends ListenerAdapter implements Details {
 
-    private final SystemManager systemData;
+    private final SystemData systemData;
 
-    public SelfDestructDelay(SystemManager systemData) {
+    public SelfDestructDelay(SystemData systemData) {
         this.systemData = systemData;
     }
 
+    /**
+     * if the self-destruct is enabled it will delete the commands of the members
+     * every X amount of time to keep the chat clean
+     */
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
+        if (!e.isFromGuild()) return;
+
         String[] message = e.getMessage().getContentRaw().split(" ");
 
         if (message.length != 2 && Utils.hasAdmin(e.getMember())) return;
 
-        if (message[0].equalsIgnoreCase(systemData.getCommandPrefix() + "selfDestructDelay")) {
+        if (message[0].equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "selfDestructDelay")) {
             if (getNumber(message[1]) != -1) {
-                systemData.setSelfDestructDelay(getNumber(message[1]));
-                eraseCommand(systemData, e.getMessage());
+                systemData.setSelfDestructDelay(e.getGuild().getId(), getNumber(message[1]));
+                                eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
+
             }
         }
     }
@@ -38,7 +46,7 @@ public class SelfDestructDelay extends ListenerAdapter implements Details {
     }
 
     @Override
-    public String getExplanation() {
-        return systemData.getCommandPrefix() + "selfDestructDelay <seconds>, to delete the command after X seconds";
+    public String getExplanation(String serverId) {
+        return systemData.getCommandPrefix(serverId) + "selfDestructDelay <seconds>, to delete the command after X seconds";
     }
 }

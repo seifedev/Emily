@@ -55,7 +55,8 @@ public class FileManager {
 
     public void saveGsonSongsQueue(Map map) {
         String json = gson.toJson(map);
-        mutedHistory.delete();
+        songsQueue.delete();
+
         try {
             Files.write(songsQueue.toPath(), json.getBytes());
         } catch (IOException e) {

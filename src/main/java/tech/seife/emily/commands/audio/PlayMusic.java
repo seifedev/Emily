@@ -1,18 +1,21 @@
 package tech.seife.emily.commands.audio;
 
 import com.google.api.services.youtube.model.VideoListResponse;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.managers.AudioManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import tech.seife.emily.audio.AudioResult;
-import tech.seife.emily.audio.RetrieveVideo;
+import tech.seife.emily.audiologic.*;
 import tech.seife.emily.commands.Details;
+import tech.seife.emily.datamanager.data.audio.AudioData;
 import tech.seife.emily.datamanager.data.audio.QueueManager;
-import tech.seife.emily.datamanager.data.system.SystemManager;
+import tech.seife.emily.datamanager.data.audio.Song;
+import tech.seife.emily.datamanager.data.system.SystemData;
 
 import java.awt.*;
 import java.io.IOException;
@@ -21,44 +24,70 @@ import java.util.concurrent.TimeUnit;
 
 public class PlayMusic extends ListenerAdapter implements Details {
 
-    private final SystemManager systemData;
+    private final SystemData systemData;
     private final AudioPlayerManager audioPlayerManager;
-    private final AudioPlayer audioPlayer;
     private final QueueManager queueManager;
+    private final AudioData audioData;
+    private final GuildAudioPlayer guildAudioPlayer;
 
-    public PlayMusic(SystemManager systemData, AudioPlayerManager audioPlayerManager, AudioPlayer audioPlayer, QueueManager queueManager) {
+    public PlayMusic(SystemData systemData, AudioPlayerManager audioPlayerManager, QueueManager queueManager, AudioData audioData, GuildAudioPlayer guildAudioPlayer) {
         this.systemData = systemData;
         this.audioPlayerManager = audioPlayerManager;
-        this.audioPlayer = audioPlayer;
         this.queueManager = queueManager;
+        this.audioData = audioData;
+        this.guildAudioPlayer = guildAudioPlayer;
     }
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!systemData.getMusicChannel().equals(systemData.getMusicChannel())) return;
+        if (!e.isFromGuild()) return;
+
+        if (!systemData.hasMusicChannel(e.getGuild().getId()) || !systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId()))
+            return;
+
+        if (e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) return;
 
         String[] message = e.getMessage().getContentRaw().split(" ");
 
-        if (message.length >= 2 && message[0].equalsIgnoreCase(systemData.getCommandPrefix() + "play")) {
-            if (e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) return;
+        if (message.length >= 2 && message[0].equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "play")) {
 
-            VideoListResponse video = getVideoListResponse(message);
+            VideoListResponse video = getVideoListResponse(message, e.getGuild().getId());
 
-            if (audioPlayer.getPlayingTrack() == null) {
-                audioPlayerManager.loadItem(getUrl(video.getItems().get(0).getId()), new AudioResult(audioPlayerManager, audioPlayer));
-                queueManager.addCurrentSong(video.getItems().get(0).getSnippet().getTitle(), video.getItems().get(0).getId(), video.getItems().get(0).getContentDetails().getDuration());
+            if (!guildAudioPlayer.dataExists(e.getGuild().getId())) {
+
+                AudioEventAdapter audioEventAdapter = new TruckScheduler(audioPlayerManager, audioData, guildAudioPlayer);
+
+                guildAudioPlayer.addGuild(e.getGuild().getId(), audioEventAdapter);
+
+                AudioManager audioManager = e.getGuild().getAudioManager();
+
+                audioManager.setSendingHandler(new AudioPlayerSendHandler(guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer()));
+
+                audioManager.setSelfDeafened(true);
+                audioManager.setSelfMuted(false);
+
+
+                audioPlayerManager.loadItem(getUrl(video.getItems().get(0).getId()), new AudioResults(audioPlayerManager, guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer()));
+                queueManager.setNextSong(e.getGuild().getId(), getSongFromVideoListResponse(video));
             } else {
-                queueManager.addToQueue(video.getItems().get(0).getSnippet().getTitle(), video.getItems().get(0).getId(), video.getItems().get(0).getContentDetails().getDuration());
+                queueManager.addToQueue(e.getGuild().getId(), getSongFromVideoListResponse(video));
             }
-            eraseCommand(systemData, e.getMessage());
-            e.getChannel().sendMessageEmbeds(getPlayMessage(video.getItems().get(0).getSnippet().getTitle(), video.getItems().get(0).getContentDetails().getDuration(), getUrl(video.getItems().get(0).getId())).build()).queue();
 
+            eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
+
+            e.getChannel().sendMessageEmbeds(getSuccessMessage(video.getItems().get(0).getSnippet().getTitle(), video.getItems().get(0).getContentDetails().getDuration(), getUrl(video.getItems().get(0).getId())).build()).queue();
         }
 
 
     }
 
-    private EmbedBuilder getPlayMessage(String songName, String duration, String url) {
+    /**
+     * @param songName The name of the song
+     * @param duration The duration of the song in a readable form
+     * @param url      The URL of the song
+     * @return an EmbedBuilder that contains the success message.
+     */
+    private EmbedBuilder getSuccessMessage(String songName, String duration, String url) {
         EmbedBuilder builder = new EmbedBuilder();
 
         builder.setColor(Color.CYAN);
@@ -82,13 +111,15 @@ public class PlayMusic extends ListenerAdapter implements Details {
     }
 
     @Nullable
-    private VideoListResponse getVideoListResponse(String[] message) {
-        RetrieveVideo retrieveVideo = new RetrieveVideo();
+    private VideoListResponse getVideoListResponse(String[] message, String serverId) {
+        RetrieveVideo retrieveVideo = new RetrieveVideo(systemData);
+
 
         VideoListResponse videoListResponse = null;
         try {
-            videoListResponse = retrieveVideo.getVideo(getInput(message));
+            videoListResponse = retrieveVideo.getVideo(getSong(message), serverId);
         } catch (IOException e) {
+            // TODO: 15/10/2022 Better error handling.
             System.out.println(e.getMessage());
         }
 
@@ -101,7 +132,11 @@ public class PlayMusic extends ListenerAdapter implements Details {
         return yt;
     }
 
-    private String getInput(String[] message) {
+    /**
+     * @param message The message that the member sent.
+     * @return the URL or the song name from the member's message.
+     */
+    private String getSong(String[] message) {
         if (message.length >= 3) {
             StringBuilder sb = new StringBuilder();
 
@@ -114,8 +149,12 @@ public class PlayMusic extends ListenerAdapter implements Details {
     }
 
     @Override
-    public String getExplanation() {
-        return systemData.getCommandPrefix() + "play <Name of the Song>, <video ID> or <URL> to play a song in the audio channel.";
+    public String getExplanation(String serverId) {
+        return systemData.getCommandPrefix(serverId) + "play <Name of the Song>, <video ID> or <URL> to play a song in the audio channel.";
+    }
+
+    private Song getSongFromVideoListResponse(VideoListResponse video) {
+        return new Song(video.getItems().get(0).getSnippet().getTitle(), video.getItems().get(0).getId(), video.getItems().get(0).getContentDetails().getDuration());
     }
 
 }

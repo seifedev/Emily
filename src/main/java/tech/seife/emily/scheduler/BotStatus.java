@@ -15,6 +15,9 @@ public class BotStatus implements Runnable {
     }
 
 
+    /**
+     * It goes through all the servers that the bot has been installed and counts the members.
+     */
     @Override
     public void run() {
         int members = 0;
