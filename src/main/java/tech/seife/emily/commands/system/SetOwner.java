@@ -1,59 +1,47 @@
 package tech.seife.emily.commands.system;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import tech.seife.emily.commands.Details;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.datamanager.data.system.SystemData;
-import tech.seife.emily.datamanager.data.system.SystemFileHandler;
 import tech.seife.emily.utils.Utils;
 
-public class SetOwner extends ListenerAdapter implements Details {
+public class SetOwner extends ListenerAdapter {
 
     private final SystemData systemData;
+    private final Messenger messenger;
 
-    public SetOwner(SystemData systemData) {
+    public SetOwner(SystemData systemData, Messenger messenger) {
         this.systemData = systemData;
+        this.messenger = messenger;
     }
 
-
-    /**
-     * Set's the owner of the bot for the said server.
-     */
     @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("setOwner") || !canRunCommand(e)) return;
 
-        String[] message = e.getMessage().getContentRaw().split(" ");
+        long userId = Utils.getUserId(e.getSubcommandGroup().split(" ")[1]);
 
-        if (message[0].equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "setOwner")) {
-
-            if (message.length != 2 || !Utils.hasAdmin(e.getMember())) return;
-
-            long userId = Utils.getUserId(message[1]);
-
-            if (e.getGuild().retrieveMemberById(parseId(String.valueOf(userId))).complete() != null) {
-                e.getGuild().retrieveMemberById(parseId(String.valueOf(userId))).queue(member -> {
-                    if (member != null) {
-                        systemData.setOwner(e.getGuild().getId(), String.valueOf(userId));
-                        eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
-
-                    }
-                });
+        e.getGuild().retrieveMemberById(Utils.parseLong(String.valueOf(userId))).queue(member -> {
+            if (member != null) {
+                systemData.setOwner(e.getGuild().getId(), String.valueOf(userId));
             }
-        }
+        });
     }
 
-    private long parseId(String id) {
-        try {
-            return Long.parseLong(id);
-        } catch (NumberFormatException e) {
-            return -1;
+    private boolean canRunCommand(SlashCommandInteractionEvent e) {
+        if (!Utils.hasManageChannel(e.getMember())) {
+             e.replyEmbeds(messenger.getMessageEmbed("noPermission")).queue();
+            return false;
+        } else if (e.getSubcommandGroup() == null || e.getSubcommandGroup().split(" ").length != 1) {
+             e.replyEmbeds(messenger.getMessageEmbed("wrongAmountOfOptions")).queue();
+            return false;
+        } else if (Utils.getUserId(e.getSubcommandGroup().split(" ")[1]) == -1 || e.getGuild().retrieveMemberById(Utils.parseLong(String.valueOf(Utils.getUserId(e.getSubcommandGroup().split(" ")[1])))).complete() == null) {
+             e.replyEmbeds(messenger.getMessageEmbed("userNotFound")).queue();
+            return false;
         }
+        return true;
     }
 
-    @Override
-    public String getExplanation(String serverId) {
-        return systemData.getCommandPrefix(serverId) + "setOwner <tag user> to set the new user of the bot in a server.";
-    }
 }

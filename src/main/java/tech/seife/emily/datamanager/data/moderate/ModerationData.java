@@ -1,5 +1,6 @@
 package tech.seife.emily.datamanager.data.moderate;
 
+import java.lang.annotation.Documented;
 import java.util.Set;
 
 public interface ModerationData {

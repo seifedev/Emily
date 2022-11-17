@@ -1,42 +1,52 @@
 package tech.seife.emily.commands.management;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import tech.seife.emily.commands.Details;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.datamanager.data.moderate.MutedUserManager;
 import tech.seife.emily.datamanager.data.system.SystemData;
 import tech.seife.emily.utils.Utils;
 
 import java.time.LocalDateTime;
 
-public class Mute extends ListenerAdapter implements Details {
+public class Mute extends ListenerAdapter {
     private final MutedUserManager mutedUserManager;
     private final SystemData systemData;
+    private final Messenger messenger;
 
-    public Mute(MutedUserManager mutedUserManager, SystemData systemData) {
+    public Mute(MutedUserManager mutedUserManager, SystemData systemData, Messenger messenger) {
         this.mutedUserManager = mutedUserManager;
         this.systemData = systemData;
+        this.messenger = messenger;
     }
 
-    /**
-     * Attempts to mute a member.
-     */
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
-        String[] messages = e.getMessage().getContentRaw().split(" ");
-        if (messages.length > 3 && Utils.hasAdmin(e.getMember())) {
-            if (messages[0].equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "mute")) {
-                long userId = Utils.getUserId(messages[1]);
-                if (userId != -1L && this.mutedUserManager.getMutedUsersDataSetForServer(String.valueOf(userId)) == null) {
-                    LocalDateTime releaseDate = this.getReleaseDate(messages[2]);
-                    String muteReason = this.getReason(messages);
-                    mutedUserManager.muteUser(String.valueOf(userId), e.getGuild().getId(), LocalDateTime.now(), releaseDate, muteReason);
-                    eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
-                }
-            }
+    @Override
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("mute") || !canRunCommand(e)) return;
 
+        long userId = e.getOption("member").getAsMentionable().getIdLong();
+
+        LocalDateTime releaseDate = getReleaseDate(e.getOption("duration").getAsString());
+        String muteReason = e.getOption("reason").getAsString();
+        mutedUserManager.muteUser(String.valueOf(userId), e.getGuild().getId(), LocalDateTime.now(), releaseDate, muteReason);
+    }
+
+    private boolean canRunCommand(SlashCommandInteractionEvent e) {
+        if (!Utils.hasAdmin(e.getMember())) {
+             e.replyEmbeds(messenger.getMessageEmbed("noPermission")).queue();
+            return false;
+        } else if (e.getOptions().isEmpty() || e.getOptions().size() < 3) {
+             e.replyEmbeds(messenger.getMessageEmbed("wrongAmountOfOptions")).queue();
+            return false;
+        } else if (e.getOption("member") == null) {
+             e.replyEmbeds(messenger.getMessageEmbed("wrongArgument")).queue();
+            return false;
+        } else if (mutedUserManager.getMutedUsersDataSetForServer(e.getOption("member").getName()) != null) {
+             e.replyEmbeds(messenger.getMessageEmbed("userNotFound")).queue();
+            return false;
         }
+        return true;
     }
 
     /**
@@ -87,10 +97,5 @@ public class Mute extends ListenerAdapter implements Details {
         } catch (NumberFormatException var3) {
             return -1L;
         }
-    }
-
-    @Override
-    public String getExplanation(String serverId) {
-        return this.systemData.getCommandPrefix(serverId) + "mute <tag a player> <time> <reason> to mute a user for a certain amount of <time> and for the following <reason>.";
     }
 }

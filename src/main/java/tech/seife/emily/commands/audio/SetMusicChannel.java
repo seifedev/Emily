@@ -1,37 +1,26 @@
 package tech.seife.emily.commands.audio;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import tech.seife.emily.commands.Details;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.datamanager.data.system.SystemData;
 
-public class SetMusicChannel extends ListenerAdapter implements Details {
+public class SetMusicChannel extends ListenerAdapter {
 
     private final SystemData systemData;
+    private final Messenger messenger;
 
-    public SetMusicChannel(SystemData SystemData) {
+    public SetMusicChannel(SystemData SystemData, Messenger messenger) {
         this.systemData = SystemData;
+        this.messenger = messenger;
     }
 
-    /**
-     * There can be only one music channel per time.
-     * This class can define the music channel or change it if there is one already.
-     */
     @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
-
-        String[] message = e.getMessage().getContentRaw().split(" ");
-
-        if (message.length == 1 && message[0].equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "setMusicChannel")) {
-            systemData.setMusicChannel(e.getGuild().getId(), e.getChannel().getId());
-            eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("setMusicChannel")) {
+            return;
         }
-    }
-
-    @Override
-    public String getExplanation(String serverId) {
-        return systemData.getCommandPrefix(serverId) + "Sets a channel to play music";
+        systemData.setMusicChannel(e.getGuild().getId(), e.getChannel().getId());
     }
 }

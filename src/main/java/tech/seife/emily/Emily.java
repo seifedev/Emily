@@ -4,6 +4,11 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.jetbrains.annotations.Nullable;
 import tech.seife.emily.audiologic.GuildAudioPlayer;
@@ -27,6 +32,9 @@ import tech.seife.emily.events.QueueReactions;
 import tech.seife.emily.scheduler.BotStatus;
 
 import javax.security.auth.login.LoginException;
+import javax.swing.text.html.Option;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -34,15 +42,13 @@ public class Emily {
 
     //System
     private final JDA jda;
+    //Miscellaneous
+    private final Messenger messenger;
     private MutedUserManager mutedUserManager;
-
     //Audio
     private AudioPlayerManager audioManager;
     private GuildAudioPlayer guildAudioPlayer;
-
     private AudioData audioData;
-
-
     //Data
     private SystemData systemData;
     private ModerationData moderationData;
@@ -50,30 +56,21 @@ public class Emily {
     private QueueManager queueManager;
     private MuteManager muteManager;
 
-    //Events and commands
-    private Commands commands;
-
     public Emily() {
         initialize();
         jda = loadJda();
+        messenger = new Messenger(jda, fileManager);
 
         scheduler(jda);
         mutedUserManager.loadMutedUsers(moderationData);
 
-
-        populateCommands();
         registerEvents();
-        registerCommands();
+        populateCommands();
     }
 
     public static void main(String[] args) {
         new Emily();
     }
-
-    private void registerCommands() {
-        commands.getCommands().forEach(jda::addEventListener);
-    }
-
 
     /**
      * @return if it can load the JDA it returns the JDA otherwise null.
@@ -82,10 +79,7 @@ public class Emily {
     private JDA loadJda() {
         JDA jda = null;
         try {
-            jda = JDABuilder.createDefault(systemData.getDiscordBotToken()).enableIntents(GatewayIntent.GUILD_MEMBERS).enableIntents(GatewayIntent.DIRECT_MESSAGES).build().awaitReady();
-        } catch (LoginException e) {
-            // TODO: 10/4/2022 to replace it with a proper logger
-            System.out.println("Failed to login: " + e.getMessage());
+            jda = JDABuilder.createLight(systemData.getDiscordBotToken()).build().awaitReady();
         } catch (InterruptedException e) {
             // TODO: 10/4/2022 to replace it with a proper logger
             System.out.println("Interrupted exception: " + e.getMessage());
@@ -120,8 +114,6 @@ public class Emily {
         moderationData = new ModerationFileHandler(fileManager);
         muteManager = new MuteManager(moderationData);
         mutedUserManager = new MutedUserManager(muteManager);
-
-        commands = new Commands();
     }
 
     /**
@@ -129,36 +121,79 @@ public class Emily {
      * it's a bit more readable and less clustered
      */
     private void populateCommands() {
-        commands.addCommand(new HelpCommand(systemData, commands));
+        commandsWithoutArguments();
+        commandsWithArguments();
 
-        commands.addCommand(new SetMusicChannel(systemData));
-        commands.addCommand(new Summon(systemData, guildAudioPlayer));
-        commands.addCommand(new PlayMusic(systemData, audioManager, queueManager, audioData, guildAudioPlayer));
-        commands.addCommand(new SkipPartsOfMusic(systemData, guildAudioPlayer));
-        commands.addCommand(new SkipSong(systemData, guildAudioPlayer));
-        commands.addCommand(new StopMusic(systemData, queueManager, guildAudioPlayer));
-        commands.addCommand(new ChangeVolume(systemData, guildAudioPlayer));
-        commands.addCommand(new Yeet(systemData));
+        List<CommandData> commandData = new ArrayList<>();
 
 
-        commands.addCommand(new CleanMessages(systemData));
-        commands.addCommand(new Contact(jda, systemData));
-        commands.addCommand(new SetPrefix(jda, systemData));
-        commands.addCommand(new SlowMode(systemData));
-        commands.addCommand(new SetOwner(systemData));
-        commands.addCommand(new Mute(mutedUserManager, systemData));
-        commands.addCommand(new UnMute(jda, mutedUserManager, systemData));
-        commands.addCommand(new ShowQueue(systemData, queueManager, jda));
-        commands.addCommand(new BotTalk(systemData));
-        commands.addCommand(new SelfDestructSwitch(systemData));
-        commands.addCommand(new SelfDestructDelay(systemData));
-        commands.addCommand(new SetDmChannel(systemData));
+        jda.updateCommands().addCommands(commandData).queue();
+    }
+
+    private void commandsWithoutArguments() {
+        List<CommandData> commandData = new ArrayList<>();
+
+        commandData.add(jda.upsertCommand("skipsong", "Stop the current song"));
+        commandData.add(jda.upsertCommand("stopmusic", "Stop playing the current"));
+        commandData.add(jda.upsertCommand("summon", "Summon the bot in a voice channel."));
+        commandData.add(jda.upsertCommand("yeet", "Kick all the members out of the voice channel."));
+        commandData.add(jda.upsertCommand("setmusicchannel", "Change or create a new music channel!"));
+        commandData.add(jda.upsertCommand("showqueue", "Prints the songs in the queue."));
+
+        jda.updateCommands().addCommands(commandData).queue();
+    }
+
+    private void commandsWithArguments() {
+        List<CommandData> commandData = new ArrayList<>();
+        commandData.add(jda.upsertCommand("contact", "Send a private message while impersonating the bot, requires to tag the member.").addOption(OptionType.MENTIONABLE, "tag", "Tag a member to send them a message.").addOption(OptionType.STRING, "message", "What you want to tell them."));
+
+        commandData.add(jda.upsertCommand("clean", "Clean a certain amount of messages from the chat.").addOption(OptionType.INTEGER, "amount", "how many messages to delete."));
+
+        commandData.add(jda.upsertCommand("talk", "The bot will imitate what you said.").addOption(OptionType.STRING, "message", "What the bot should say."));
+
+        commandData.add(jda.upsertCommand("changevolume", "Change the volume of the music that is being played.").addOption(OptionType.INTEGER, "percentage", "the percentage to increase/decrease the volume"));
+
+        commandData.add(jda.upsertCommand("slowmode", "Enable/Disable the slow mode in a channel.").addOption(OptionType.INTEGER, "delay", "the amount of delay in seconds between each message per user"));
+
+        commandData.add(jda.upsertCommand("seek", "Change your time stamp in the music").addOption(OptionType.INTEGER, "seconds", "go forwards/backwards by a X amount of seconds"));
+
+        commandData.add(jda.upsertCommand("playmusic", "Start playing a song, provide URL or name").addOption(OptionType.STRING, "song", "Either the URL to the song or the name of the song."));
+
+        List<OptionData> muteData = new ArrayList<>();
+
+        muteData.add(new OptionData(OptionType.MENTIONABLE, "member", "The member to mute)"));
+        muteData.add(new OptionData(OptionType.STRING, "duration", "for how long to mute"));
+        muteData.add(new OptionData(OptionType.STRING, "reason", "The reason to mute him"));
+
+        commandData.add(jda.upsertCommand("mute", "Mute a member.").addOptions(muteData));
+
+        List<OptionData> unMuteData = new ArrayList<>();
+
+        unMuteData.add(new OptionData(OptionType.MENTIONABLE, "member", "The member to unmute"));
+        unMuteData.add(new OptionData(OptionType.STRING, "reason", "The reason to remove the mute"));
+
+        commandData.add(jda.upsertCommand("unmute", "Remove the mute from a member.").addOptions(unMuteData));
+
+
+        jda.updateCommands().addCommands(commandData).queue();
     }
 
     /**
      * It registers all the events for the bot.
      */
     private void registerEvents() {
+        jda.addEventListener(new ChangeVolume(systemData, guildAudioPlayer, messenger));
+        jda.addEventListener(new PlayMusic(systemData, audioManager, queueManager, audioData, guildAudioPlayer, messenger));
+        jda.addEventListener(new SetMusicChannel(systemData, messenger));
+        jda.addEventListener(new ShowQueue(systemData, queueManager, jda, messenger));
+        jda.addEventListener(new SkipPartsOfMusic(systemData, guildAudioPlayer, messenger));
+        jda.addEventListener(new SkipSong(systemData, guildAudioPlayer, messenger));
+        jda.addEventListener(new Summon(systemData, messenger));
+        jda.addEventListener(new CleanMessages(systemData, messenger));
+        jda.addEventListener(new Contact(jda, systemData, messenger));
+        jda.addEventListener(new Mute(mutedUserManager, systemData, messenger));
+        jda.addEventListener(new SlowMode(systemData, messenger));
+        jda.addEventListener(new UnMute(jda, mutedUserManager, systemData, messenger));
         jda.addEventListener(new AutomaticUnmute(mutedUserManager));
         jda.addEventListener(new QueueReactions(jda, queueManager));
         jda.addEventListener(new PrivateMessages(systemData, jda));

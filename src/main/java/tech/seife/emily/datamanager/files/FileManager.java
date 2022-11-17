@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -15,7 +16,7 @@ import java.util.Map;
 public class FileManager {
 
     private final File resourcesFile;
-    private final File muted, mutedHistory, settings, songsQueue;
+    private final File muted, mutedHistory, settings, songsQueue, levels, messages;
     private final Logger logger;
     private final Gson gson;
 
@@ -23,13 +24,14 @@ public class FileManager {
         logger = LoggerFactory.getLogger(FileManager.class);
         gson = new Gson();
 
-        resourcesFile = new File("src/main/resources");
-
+        resourcesFile = new File("resources");
 
         settings = new File(resourcesFile.getAbsolutePath() + File.separator + "settings.json");
         muted = new File(resourcesFile.getAbsolutePath() + File.separator + "muted.json");
         mutedHistory = new File(resourcesFile.getAbsolutePath() + File.separator + "mutedHistory.json");
         songsQueue = new File(resourcesFile.getAbsolutePath() + File.separator + "songsQueue.json");
+        levels = new File(resourcesFile.getAbsolutePath() + File.separator + "levels.json");
+        messages = new File(resourcesFile.getAbsolutePath() + File.separator + "messages.json");
 
         if (!resourcesFile.exists()) {
             resourcesFile.mkdirs();
@@ -38,12 +40,46 @@ public class FileManager {
                 muted.createNewFile();
                 mutedHistory.createNewFile();
                 songsQueue.createNewFile();
+                levels.createNewFile();
+                messages.createNewFile();
             } catch (IOException e) {
                 logger.error("Failed to create the file, error message: " + e.getMessage());
             }
         }
     }
 
+    @Nullable
+    public HashMap getLevels() {
+        try {
+            return gson.fromJson(new FileReader(levels), HashMap.class);
+        } catch (FileNotFoundException e) {
+            logger.error(settings.getName() + " wasn't found");
+        }
+        return null;
+    }
+
+    @Nullable
+    public HashMap getMessagesGson() {
+        try {
+            return gson.fromJson(new FileReader(messages), HashMap.class);
+        } catch (FileNotFoundException e) {
+            logger.error(settings.getName() + " wasn't found");
+        }
+        return null;
+    }
+
+    public void saveLevels(Map map) {
+        String json = gson.toJson(map);
+        songsQueue.delete();
+
+        try {
+            Files.write(levels.toPath(), json.getBytes());
+        } catch (IOException e) {
+            logger.error("Failed to save json!\nErrorMessage: " + e.getMessage());
+        }
+    }
+
+    @Nullable
     public HashMap getGsonSongsQueue() {
         try {
             return gson.fromJson(new FileReader(songsQueue), HashMap.class);
@@ -65,6 +101,7 @@ public class FileManager {
     }
 
 
+    @Nullable
     public HashMap getGsonMutedHistory() {
         try {
             return gson.fromJson(new FileReader(mutedHistory), HashMap.class);
@@ -84,7 +121,7 @@ public class FileManager {
         }
     }
 
-
+    @Nullable
     public HashMap getGsonMuted() {
         try {
             return gson.fromJson(new FileReader(muted), HashMap.class);
@@ -114,7 +151,7 @@ public class FileManager {
         }
     }
 
-
+    @Nullable
     public HashMap getGsonSettings() {
         try {
             return gson.fromJson(new FileReader(settings), HashMap.class);

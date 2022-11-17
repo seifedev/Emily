@@ -187,13 +187,13 @@ public class AudioFileHandler implements AudioData {
             return false;
         }
 
-        if (getQueue(serverId, 1, 1) == null && getQueue(serverId, 1, 1) == null) {
+        if (getQueue(serverId, 0, 1) == null) {
             return false;
         }
 
         Song song = null;
 
-        for (Map.Entry<String, Song> entry : getQueue(serverId, 1, 1).entries()) {
+        for (Map.Entry<String, Song> entry : getQueue(serverId, 0, 1).entries()) {
             song = entry.getValue();
         }
 

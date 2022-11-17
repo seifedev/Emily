@@ -1,46 +1,47 @@
 package tech.seife.emily.commands.audio;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.audiologic.GuildAudioPlayer;
-import tech.seife.emily.commands.Details;
 import tech.seife.emily.datamanager.data.system.SystemData;
 
-public class SkipSong extends ListenerAdapter implements Details {
+public class SkipSong extends ListenerAdapter{
 
     private final SystemData systemData;
     private final GuildAudioPlayer guildAudioPlayer;
+    private final Messenger messenger;
 
-    public SkipSong(SystemData systemData, GuildAudioPlayer guildAudioPlayer) {
+    public SkipSong(SystemData systemData, GuildAudioPlayer guildAudioPlayer, Messenger messenger) {
         this.systemData = systemData;
         this.guildAudioPlayer = guildAudioPlayer;
-
+        this.messenger = messenger;
     }
 
-    /**
-     * Directly skips a song if there is a next one in the queue,
-     * Otherwise it stops playing music.
-     */
     @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("skipSong") || !canRunCommand(e)) return;
 
-        if (e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) return;
+        guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().getPlayingTrack().setPosition(guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().getPlayingTrack().getInfo().length);
+    }
 
-        if (!systemData.hasMusicChannel(e.getGuild().getId()) || !systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId()))
-            return;
-
-        if (e.getMessage().getContentRaw().equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "skip")) {
-            if (guildAudioPlayer.dataExists(e.getGuild().getId()) && guildAudioPlayer.getAudioData(e.getGuild().getId()) != null) {
-                guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().getPlayingTrack().setPosition(guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().getPlayingTrack().getInfo().length);
-                eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
-            }
+    private boolean canRunCommand(@NotNull SlashCommandInteractionEvent e) {
+        if (!systemData.hasMusicChannel(e.getGuild().getId())) {
+             e.replyEmbeds(messenger.getMessageEmbed("notInVoiceChat")).queue();
+            return false;
+        } else if (!systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId())) {
+             e.replyEmbeds(messenger.getMessageEmbed("notAMusicChannel")).queue();
+            return false;
+        } else if (e.getMember() == null || e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) {
+             e.replyEmbeds(messenger.getMessageEmbed("notInVoiceChat")).queue();
+            return false;
+        } else if (e.getSubcommandGroup() == null || e.getSubcommandGroup().split(" ").length != 1) {
+             e.replyEmbeds(messenger.getMessageEmbed("wrongAmountOfOptions")).queue();
+            return false;
+        } else if (guildAudioPlayer.dataExists(e.getGuild().getId())) {
+             e.replyEmbeds(messenger.getMessageEmbed("notPlayingMusic")).queue();
         }
-    }
-
-    @Override
-    public String getExplanation(String serverId) {
-        return systemData.getCommandPrefix(serverId) + "skip to skip the current song.";
+        return true;
     }
 }

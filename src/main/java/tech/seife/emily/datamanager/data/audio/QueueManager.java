@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,9 +24,9 @@ public class QueueManager {
     }
 
     public void addReactions(Message message) {
-        message.addReaction("U+274C").queue();
-        message.addReaction("U+23ED").queue();
-        message.addReaction("U+23EE").queue();
+        message.addReaction(Emoji.fromFormatted("U+274C")).queue();
+        message.addReaction(Emoji.fromFormatted("U+23ED")).queue();
+        message.addReaction(Emoji.fromFormatted("U+23EE")).queue();
     }
 
     public void addQueueManager(String user, String id, EmbedBuilder embedBuilder) {

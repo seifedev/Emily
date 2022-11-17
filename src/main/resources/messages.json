@@ -1,0 +1,54 @@
+{
+  "createMusicChannel": {
+    "embedTitle": "Music channel not found.",
+    "description": "The music channel wasn't found, please create a new one."
+  },
+  "wrongChannel": {
+    "title": "Wrong channel.",
+    "description": "You can't run this command in this channel."
+  },
+  "notInVoiceChat": {
+    "title": "Not in Voice Chat.",
+    "description": "You must be in the appropriate voice/music channel to run this command."
+  },
+  "wrongAmountOfOptions": {
+    "title": "Wrong amount of options provided.",
+    "description": "Please read the instructions of how to use this command from and run it again."
+  },
+  "currentSong": {
+    "title": "Currently playing: %title%",
+    "description": "Duration of the song %duration%\nYou can find the song at: %url%"
+  },
+  "addedToQueue": {
+    "title": "The %title% is in Queue",
+    "description": "The song %title% has been added to the queue, the duration of the song is %duration% and can be found at %url%"
+  },
+  "doesntTakeArguments": {
+    "title": "This command doesn't take arguments",
+    "description": "This command doesn't take arguments, please run this command without adding arguments/sub-commands"
+  },
+  "wrongArgument": {
+    "title": "This is the wrong type of argument.",
+    "description": "Please read the command description and re-run this command with the correct argument/sub-command."
+  },
+  "notPlayingMusic": {
+    "title": "Currently not playing music.",
+    "description": "The bot doesn't play any music currently, please play music or trying to run this command when a song is being played."
+  },
+  "noPermission": {
+    "title": "Requires permission.",
+    "description": "You don't have permission to run this command, if you think this is a mistake please contact an administrator."
+  },
+  "failedToSendMessage": {
+    "title": "Message failed.",
+    "description": "We failed to send this message."
+  },
+  "userNotFound": {
+    "title": "User not found.",
+    "description": "The user wasn't found, please check to see if you typed it correctly."
+  },
+  "sendMessage": {
+    "title": "Message was sent.",
+    "description": "We sent him the message!"
+  }
+}

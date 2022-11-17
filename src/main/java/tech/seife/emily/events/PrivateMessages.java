@@ -22,14 +22,12 @@ public class PrivateMessages extends ListenerAdapter {
      */
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) {
-            if (jda.getTextChannelById(systemData.getDmChannel(e.getGuild().getId())) != null) {
-                EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.setTitle(jda.getSelfUser().getName() + " received the following");
-                embedBuilder.setDescription(e.getMessage().getContentRaw());
+        if (e.getMessage().isFromGuild() || e.getMessage().getContentRaw().isEmpty()) return;
 
-                jda.getTextChannelById(systemData.getDmChannel(e.getGuild().getId())).sendMessageEmbeds(embedBuilder.build()).queue();
-            }
-        }
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle(jda.getSelfUser().getName() + " received the following");
+        embedBuilder.setDescription(e.getMessage().getContentRaw());
+
+        jda.getTextChannelById(systemData.getDmChannel(e.getGuild().getId())).sendMessageEmbeds(embedBuilder.build()).queue();
     }
 }

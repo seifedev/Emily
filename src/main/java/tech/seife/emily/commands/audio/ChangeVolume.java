@@ -1,57 +1,46 @@
 package tech.seife.emily.commands.audio;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.audiologic.GuildAudioPlayer;
-import tech.seife.emily.commands.Details;
 import tech.seife.emily.datamanager.data.system.SystemData;
 
-public class ChangeVolume extends ListenerAdapter implements Details {
+public class ChangeVolume extends ListenerAdapter {
 
     private final SystemData systemData;
     private final GuildAudioPlayer guildAudioPlayer;
+    private final Messenger messenger;
 
-    public ChangeVolume(SystemData systemData, GuildAudioPlayer guildAudioPlayer) {
+    public ChangeVolume(SystemData systemData, GuildAudioPlayer guildAudioPlayer, Messenger messenger) {
         this.systemData = systemData;
         this.guildAudioPlayer = guildAudioPlayer;
-    }
-
-    /**
-     * it changes the sound volume of the bot, based on the % that the member gave.
-     */
-    @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
-
-        if (!systemData.hasMusicChannel(e.getGuild().getId()) || !systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId()))
-            return;
-
-        if (e.getMember() == null || e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel())
-            return;
-
-        String[] messages = e.getMessage().getContentRaw().split(" ");
-
-        if (messages.length == 2 && messages[0].equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "volume") && getNumber(messages[1]) != -1) {
-            if (guildAudioPlayer.dataExists(e.getGuild().getId())) {
-                guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().setVolume(getNumber(messages[1]));
-                eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
-            }
-
-        }
-
+        this.messenger = messenger;
     }
 
     @Override
-    public String getExplanation(String serverId) {
-        return systemData.getCommandPrefix(serverId) + "volume, change the percentage of the volume";
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("changeVolume") || !canRunCommand(e)) return;
+        if (guildAudioPlayer.dataExists(e.getGuild().getId())) {
+            guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().setVolume(e.getOption("percentage").getAsInt());
+        }
     }
 
-    private int getNumber(String arg) {
-        try {
-            return Integer.parseInt(arg);
-        } catch (NumberFormatException e) {
-            return -1;
+    private boolean canRunCommand(@NotNull SlashCommandInteractionEvent e) {
+        if (!systemData.hasMusicChannel(e.getGuild().getId())) {
+            e.replyEmbeds(messenger.getMessageEmbed("createMusicChannel")).queue();
+            return false;
+        } else if (!systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId())) {
+            e.replyEmbeds(messenger.getMessageEmbed("notAMusicChannel")).queue();
+            return false;
+        } else if (e.getMember() == null || e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) {
+            e.replyEmbeds(messenger.getMessageEmbed("notInVoiceChat")).queue();
+            return false;
+        } else if (e.getOptions().size() != 1 || e.getOption("percentage") == null) {
+            e.replyEmbeds(messenger.getMessageEmbed("wrongAmountOfOptions")).queue();
+            return false;
         }
+        return true;
     }
 }

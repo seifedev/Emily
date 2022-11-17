@@ -1,61 +1,51 @@
 package tech.seife.emily.commands.management;
 
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import tech.seife.emily.commands.Details;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.datamanager.data.moderate.MutedUserManager;
 import tech.seife.emily.datamanager.data.system.SystemData;
 import tech.seife.emily.utils.Utils;
 
-public class UnMute extends ListenerAdapter implements Details {
-    private final JDA jda;
+public class UnMute extends ListenerAdapter {
     private final MutedUserManager mutedUserManager;
     private final SystemData systemData;
+    private final Messenger messenger;
 
-    public UnMute(JDA jda, MutedUserManager mutedUserManager, SystemData systemData) {
-        this.jda = jda;
+    public UnMute(JDA jda, MutedUserManager mutedUserManager, SystemData systemData, Messenger messenger) {
         this.mutedUserManager = mutedUserManager;
         this.systemData = systemData;
+        this.messenger = messenger;
     }
 
-    /**
-     * It attempts to un-mute a member.
-     */
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
+    @Override
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("unMute") || !canRunCommand(e)) return;
 
-        String[] messages = e.getMessage().getContentRaw().split(" ");
-        if (messages.length > 2 && Utils.hasAdmin(e.getMember())) {
-            if (messages[0].equalsIgnoreCase(this.systemData.getCommandPrefix(e.getGuild().getId()) + "unmute")) {
-                long user = Utils.getUserId(messages[1]);
-                if (user != -1L && this.mutedUserManager.getMutedUsersDataSetForServer(String.valueOf(user)) != null) {
-                    String reasonToUnmute = this.getReasonToUnmute(messages);
-                    mutedUserManager.unMute(String.valueOf(user), e.getGuild().getId(), reasonToUnmute);
-                    eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
-                }
-            }
 
-        }
-    }
+        long user = e.getOption("member").getAsMentionable().getIdLong();
 
-    /**
-     * The reason will be saved in the database
-     * @param input Contains the reason as to why the member should be un muted
-     * @return the reason to remove the mute.
-     */
-    private String getReasonToUnmute(String[] input) {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 1; i < input.length; ++i) {
-            sb.append(input[i]).append(" ");
+        if (user != -1L && mutedUserManager.getMutedUsersDataSetForServer(String.valueOf(user)) != null) {
+            String reasonToUnmute = e.getOption("reason").getAsString();
+            mutedUserManager.unMute(String.valueOf(user), e.getGuild().getId(), reasonToUnmute);
         }
 
-        return sb.toString();
     }
 
-    public String getExplanation(String serverId) {
-        return this.systemData.getCommandPrefix(serverId) + "unmute <tag a player> <reason> to unmute a muted user for the following <reason>.";
+    private boolean canRunCommand(SlashCommandInteractionEvent e) {
+        if (!Utils.hasManageChannel(e.getMember())) {
+            e.replyEmbeds(messenger.getMessageEmbed("noPermission")).queue();
+            return false;
+        } else if (e.getOptions().isEmpty() || e.getOptions().size() != 2) {
+            e.replyEmbeds(messenger.getMessageEmbed("wrongAmountOfOptions")).queue();
+            return false;
+        } else if (e.getOption("member") == null || e.getOption("reason") == null) {
+            e.replyEmbeds(messenger.getMessageEmbed("wrongArgument")).queue();
+            return false;
+        }
+        return true;
     }
+
 }

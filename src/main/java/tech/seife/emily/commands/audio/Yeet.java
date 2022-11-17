@@ -1,49 +1,49 @@
 package tech.seife.emily.commands.audio;
 
-import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import tech.seife.emily.commands.Details;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.datamanager.data.system.SystemData;
 
-public class Yeet extends ListenerAdapter implements Details {
+public class Yeet extends ListenerAdapter {
 
     private final SystemData systemData;
+    private final Messenger messenger;
 
-    public Yeet(SystemData systemData) {
+    public Yeet(SystemData systemData, Messenger messenger) {
         this.systemData = systemData;
+        this.messenger = messenger;
     }
 
-
-    /**
-     * it kicks every members outside of the voice chat channel.
-     */
     @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("yeet") || !canRunCommand(e)) return;
 
-        if (!systemData.hasMusicChannel(e.getGuild().getId()) || !systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId()))
-            return;
+        AudioChannel audioChannel = e.getChannel().asVoiceChannel();
 
-        if (e.getMessage().getContentRaw().equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "yeet")) {
-            if (e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) {
-                e.getChannel().sendMessage("You must be in a voice channel to use this command").queue();
-            } else {
-                AudioChannel channel = e.getMember().getVoiceState().getChannel();
-
-                for (Member member : channel.getMembers()) {
-                    channel.getGuild().moveVoiceMember(member, null).queue();
-                }
-            }
-            eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
-
+        for (Member member : audioChannel.getMembers()) {
+            audioChannel.getGuild().moveVoiceMember(member, null);
         }
     }
 
-    @Override
-    public String getExplanation(String serverId) {
-        return systemData.getCommandPrefix(serverId) + "yeet to kick all the members and the bot out of the current voice channel.";
+    private boolean canRunCommand(@NotNull SlashCommandInteractionEvent e) {
+        if (!systemData.hasMusicChannel(e.getGuild().getId())) {
+             e.replyEmbeds(messenger.getMessageEmbed("createMusicChannel")).queue();
+            return false;
+        } else if (!systemData.getMusicChannel(e.getGuild().getId()).equals(e.getChannel().getId())) {
+             e.replyEmbeds(messenger.getMessageEmbed("notAMusicChannel")).queue();
+            return false;
+        } else if (e.getMember() == null || e.getMember().getVoiceState() == null || !e.getMember().getVoiceState().inAudioChannel()) {
+             e.replyEmbeds(messenger.getMessageEmbed("notInVoiceChat")).queue();
+            return false;
+        } else if (e.getSubcommandGroup() != null) {
+             e.replyEmbeds(messenger.getMessageEmbed("doesntTakeArguments")).queue();
+            return false;
+        }
+        return true;
     }
+
 }

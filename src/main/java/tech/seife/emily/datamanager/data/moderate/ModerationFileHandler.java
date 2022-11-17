@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import tech.seife.emily.datamanager.files.FileManager;
 
+import java.lang.annotation.Documented;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Map;
@@ -60,6 +61,9 @@ public class ModerationFileHandler implements ModerationData {
         mute.addProperty("releaseDate", mutedUsersData.releaseDate().toString());
         mute.addProperty("reason", mutedUsersData.reason());
 
+
+        fileManager.saveMutesFile(gson.fromJson(gson.toJson(jsonObject), Map.class));
+
         return true;
     }
 
@@ -73,6 +77,8 @@ public class ModerationFileHandler implements ModerationData {
 
         jsonObject.get(serverId).getAsJsonObject().remove(memberId);
 
+
+        fileManager.saveMutesFile(gson.fromJson(gson.toJson(jsonObject), Map.class));
         return true;
     }
 
@@ -100,6 +106,7 @@ public class ModerationFileHandler implements ModerationData {
             server.add(mutedUsersData.memberId(), muteDetails);
         }
 
+        fileManager.saveMutedHistoryFile(gson.fromJson(gson.toJson(jsonObject), Map.class));
         return true;
     }
 

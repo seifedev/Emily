@@ -1,23 +1,5 @@
 {
-  "1031183996773748776": {
-    "commandPrefix": "$",
-    "musicChannel": "1031183996773748779",
-    "youtubeToken": ""
-  },
-  "1020712270155747338": {
-    "commandPrefix": "$",
-    "musicChannel": "1020715970538516491",
-    "youtubeToken": ""
-  },
   "global": {
-    "discordBotToken": ""
-  },
-  "serverId": {
-    "commandPrefix": "$",
-    "owner": "",
-    "selfDestruct": true,
-    "selfDestructDelay": 10.0,
-    "dmChannel": "dmChannel",
-    "musicChannel": ""
+    "discordBotToken": "OTIxMjA3NDU4NDM1ODM3OTYy.GTaY4w.CYoURssDRlV3Rx_hUDaS82Lay_iGD7sDFj7zOc"
   }
 }

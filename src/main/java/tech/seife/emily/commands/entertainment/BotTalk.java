@@ -1,39 +1,37 @@
 package tech.seife.emily.commands.entertainment;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import tech.seife.emily.commands.Details;
+import tech.seife.emily.Messenger;
 import tech.seife.emily.datamanager.data.system.SystemData;
-import tech.seife.emily.datamanager.data.system.SystemFileHandler;
 
-public class BotTalk extends ListenerAdapter implements Details {
+public class BotTalk extends ListenerAdapter {
 
     private final SystemData systemData;
+    private final Messenger messenger;
 
-    public BotTalk(SystemData systemData) {
+    public BotTalk(SystemData systemData, Messenger messenger) {
         this.systemData = systemData;
+        this.messenger = messenger;
     }
 
-    /**
-     *
-     * Make the bot talk and send a message that the member defined
-     */
     @Override
-    public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        if (!e.isFromGuild()) return;
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        if (!e.getName().equalsIgnoreCase("talk") || canRunCommand(e))
 
-        String[] message = e.getMessage().getContentRaw().split(" ");
+            e.getChannel().sendMessage(e.getOption("message").getAsString()).queue();
+    }
 
-        if (message[0].equalsIgnoreCase(systemData.getCommandPrefix(e.getGuild().getId()) + "say")) {
-            e.getChannel().sendMessage(getMessage(message)).queue();
-                            eraseCommand(systemData, e.getMessage(), e.getGuild().getId());
-
+    private boolean canRunCommand(SlashCommandInteractionEvent e) {
+        if (e.getOptions().isEmpty()) {
+            e.replyEmbeds(messenger.getMessageEmbed("wrongAmountOfOptions")).queue();
+            return false;
         }
+        return false;
     }
 
     /**
-     *
      * @param arguments What the bot should say
      * @return Returns the message that the bot should send
      */
@@ -44,10 +42,5 @@ public class BotTalk extends ListenerAdapter implements Details {
             sb.append(arguments[i]).append(" ");
         }
         return sb.toString();
-    }
-
-    @Override
-    public String getExplanation(String serverId) {
-        return systemData.getCommandPrefix(serverId) + "say, the bot will send a message with the arguments you provided";
     }
 }
