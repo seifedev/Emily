@@ -22,7 +22,8 @@ public class UnMute extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("unMute") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("unMute")) return;
+        if (!canRunCommand(e)) return;
 
 
         long user = e.getOption("member").getAsMentionable().getIdLong();

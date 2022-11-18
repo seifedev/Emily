@@ -18,9 +18,9 @@ public class SetMusicChannel extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("setMusicChannel")) {
-            return;
-        }
+        if (!e.getName().equalsIgnoreCase("setMusicChannel")) return;
         systemData.setMusicChannel(e.getGuild().getId(), e.getChannel().getId());
+
+        e.replyEmbeds(messenger.getMessageEmbed("successfullyCreatedMusicChannel")).queue();
     }
 }

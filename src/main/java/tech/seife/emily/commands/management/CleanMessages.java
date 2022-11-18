@@ -22,7 +22,9 @@ public class CleanMessages extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("clean") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("clean")) return;
+        if (!canRunCommand(e)) return;
+
         List<Message> messagesToDelete = new ArrayList();
 
         long howManyToDelete = e.getOption("amount").getAsLong();

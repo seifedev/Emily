@@ -50,5 +50,13 @@
   "sendMessage": {
     "title": "Message was sent.",
     "description": "We sent him the message!"
+  },
+  "notAMusicChannel": {
+    "title": "Not in a music channel.",
+    "description": "You must be in a voice channel to be able to listen music."
+  },
+  "successfullyCreatedMusicChannel": {
+    "title": "Created music channel!",
+    "description": "You have successfully created a music channel!"
   }
 }

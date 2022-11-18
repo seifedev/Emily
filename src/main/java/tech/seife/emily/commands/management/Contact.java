@@ -29,9 +29,6 @@ public class Contact extends ListenerAdapter {
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
         if (!e.getName().equalsIgnoreCase("contact") || e.getOptions().isEmpty()) return;
 
-        System.out.println(e.getOption("tag"));
-        System.out.println(e.getOption("message"));
-
         if (e.getOption("tag") != null && e.getOption("tag").getAsMember() != null && e.getOption("message") != null) {
             sendMessage(e.getOption("tag").getAsMember().getUser(), e.getOption("message").getAsString());
         } else if (e.getOption("tag") == null && e.getOption("message") != null && jda.retrieveUserById(this.systemData.getOwner(e.getGuild().getId())).complete() != null) {

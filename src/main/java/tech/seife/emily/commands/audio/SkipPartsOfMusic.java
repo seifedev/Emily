@@ -22,7 +22,8 @@ public class SkipPartsOfMusic extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (e.getName().equalsIgnoreCase("seek") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("seek")) return;
+        if (!canRunCommand(e)) return;
 
         long parsedNumber = e.getOption("seconds").getAsLong();
 

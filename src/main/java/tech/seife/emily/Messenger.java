@@ -33,7 +33,7 @@ public class Messenger {
         }
 
         embedBuilder.setFooter("Created by Emily.", jda.getSelfUser().getAvatarUrl());
-        embedBuilder.setAuthor(jda.getSelfUser().getName() + " Says that you are a bad boy/girl");
+        embedBuilder.setAuthor(jda.getSelfUser().getName());
         embedBuilder.setTimestamp(LocalDateTime.now());
         embedBuilder.setColor(Color.RED);
 

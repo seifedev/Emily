@@ -25,7 +25,8 @@ public class ShowQueue extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("showQueue") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("showQueue")) return;
+        if (!canRunCommand(e)) return;
         sendMessage(e);
     }
 

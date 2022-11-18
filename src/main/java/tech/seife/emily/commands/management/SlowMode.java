@@ -19,7 +19,8 @@ public class SlowMode extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("slowMode") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("slowMode")) return;
+        if (!canRunCommand(e)) return;
 
 
         TextChannel textChannel = e.getChannel().asTextChannel();

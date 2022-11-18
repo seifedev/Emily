@@ -19,7 +19,8 @@ public class SetOwner extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("setOwner") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("setOwner")) return;
+        if (!canRunCommand(e)) return;
 
         long userId = Utils.getUserId(e.getSubcommandGroup().split(" ")[1]);
 

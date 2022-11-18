@@ -23,7 +23,8 @@ public class Mute extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("mute") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("mute")) return;
+        if (!canRunCommand(e)) return;
 
         long userId = e.getOption("member").getAsMentionable().getIdLong();
 

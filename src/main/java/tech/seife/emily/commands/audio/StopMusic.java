@@ -24,7 +24,8 @@ public class StopMusic extends ListenerAdapter{
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("stop") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("stop")) return;
+        if (!canRunCommand(e)) return;
 
         guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().getPlayingTrack().stop();
         queueManager.clearSongs(e.getGuild().getId());

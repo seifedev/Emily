@@ -21,7 +21,8 @@ public class ChangeVolume extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("changeVolume") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("changeVolume")) return;
+        if (!canRunCommand(e)) return;
         if (guildAudioPlayer.dataExists(e.getGuild().getId())) {
             guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().setVolume(e.getOption("percentage").getAsInt());
         }

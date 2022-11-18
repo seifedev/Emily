@@ -21,7 +21,8 @@ public class SkipSong extends ListenerAdapter{
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("skipSong") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("skipSong")) return;
+        if (!canRunCommand(e)) return;
 
         guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().getPlayingTrack().setPosition(guildAudioPlayer.getAudioData(e.getGuild().getId()).audioPlayer().getPlayingTrack().getInfo().length);
     }

@@ -37,7 +37,8 @@ public class PlayMusic extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("playmusic") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("playmusic")) return;
+        if (!canRunCommand(e)) return;
 
 
         String[] userResponse = e.getOption("song").getAsString().split(" ");

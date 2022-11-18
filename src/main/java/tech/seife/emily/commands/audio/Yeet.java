@@ -20,7 +20,8 @@ public class Yeet extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("yeet") || !canRunCommand(e)) return;
+        if (!e.getName().equalsIgnoreCase("yeet")) return;
+        if (!canRunCommand(e)) return;
 
         AudioChannel audioChannel = e.getChannel().asVoiceChannel();
 

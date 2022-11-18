@@ -18,9 +18,10 @@ public class BotTalk extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        if (!e.getName().equalsIgnoreCase("talk") || canRunCommand(e))
+        if (!e.getName().equalsIgnoreCase("talk")) return;
+        if (!canRunCommand(e)) return;
 
-            e.getChannel().sendMessage(e.getOption("message").getAsString()).queue();
+        e.getChannel().sendMessage(e.getOption("message").getAsString()).queue();
     }
 
     private boolean canRunCommand(SlashCommandInteractionEvent e) {
