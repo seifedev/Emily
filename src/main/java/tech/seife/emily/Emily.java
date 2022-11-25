@@ -139,7 +139,7 @@ public class Emily {
     }
 
     private void commandsWithArguments() {
-        Guild guild = jda.getGuildById("939625584512876604");
+        Guild guild = jda.getGuildById("/*nothing here*/");
         List<CommandData> commandData = new ArrayList<>();
 
         commandData.add(guild.upsertCommand("contact", "Send a private message while impersonating the bot, requires to tag the member.").addOption(OptionType.MENTIONABLE, "tag", "Tag a member to send them a message.").addOption(OptionType.STRING, "message", "What you want to tell them."));
