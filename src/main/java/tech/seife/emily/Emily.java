@@ -121,7 +121,7 @@ public class Emily {
     private void commandsWithoutArguments() {
         List<CommandData> commandData = new ArrayList<>();
 
-        Guild guild = jda.getGuildById("939625584512876604");
+        Guild guild = jda.getGuildById("");
 
         commandData.add(guild.upsertCommand("skipsong", "Stop the current song"));
 
